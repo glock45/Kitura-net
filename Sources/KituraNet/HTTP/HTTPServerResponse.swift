@@ -59,6 +59,13 @@ public class HTTPServerResponse : ServerResponse {
         headers["Date"] = [SPIUtils.httpDate()]
     }
 
+    public func `switch`(to processor: IncomingSocketProcessor) {
+        self.statusCode = .switchingProtocols
+
+        self.processor?.handler?.processor = processor
+        processor.handler = self.processor?.handler
+    }
+
     /// Write a string as a response.
     ///
     /// - Parameter from: String data to be written.
@@ -152,16 +159,24 @@ public class HTTPServerResponse : ServerResponse {
                 headerData.append("\r\n")
             }
         }
-        let keepAlive = processor?.isKeepAlive ?? false
-        if  keepAlive {
-            headerData.append("Connection: Keep-Alive\r\n")
-            headerData.append("Keep-Alive: timeout=\(Int(IncomingHTTPSocketProcessor.keepAliveTimeout)), max=\((processor?.numberOfRequests ?? 1) - 1)\r\n")
-        }
-        else {
-            headerData.append("Connection: Close\r\n")
+
+        let upgrade = processor?.isUpgrade ?? false
+        if upgrade {
+            print("setting upgrade")
+            headerData.append("Connection: Upgrade\r\n")
+        } else {
+            let keepAlive = processor?.isKeepAlive ?? false
+            if  keepAlive {
+                headerData.append("Connection: Keep-Alive\r\n")
+                headerData.append("Keep-Alive: timeout=\(Int(IncomingHTTPSocketProcessor.keepAliveTimeout)), max=\((processor?.numberOfRequests ?? 1) - 1)\r\n")
+            }
+            else {
+                headerData.append("Connection: Close\r\n")
+            }
         }
         
         headerData.append("\r\n")
+        print(headerData)
         try writeToSocketThroughBuffer(text: headerData)
         startFlushed = true
     }

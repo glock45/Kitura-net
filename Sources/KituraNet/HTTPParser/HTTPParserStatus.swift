@@ -23,6 +23,7 @@ enum HTTPParserState {
     case headersComplete
     case messageComplete
     case reset
+    case upgrade
 }
 
 /// HTTP parser error types

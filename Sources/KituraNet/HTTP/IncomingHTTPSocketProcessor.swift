@@ -42,6 +42,9 @@ public class IncomingHTTPSocketProcessor: IncomingSocketProcessor {
     
     /// A flag indicating that the client has requested that the socket be kept alive
     private(set) var clientRequestedKeepAlive = false
+
+    /// A flag indicating that the client has requested protocol upgrade
+    private(set) var clientRequestedUpgrade = false
     
     /// The socket if idle will be kep alive until...
     public var keepAliveUntil: TimeInterval = 0.0
@@ -54,6 +57,8 @@ public class IncomingHTTPSocketProcessor: IncomingSocketProcessor {
     
     /// Should this socket actually be kept alive?
     var isKeepAlive: Bool { return clientRequestedKeepAlive && numberOfRequests > 0 }
+    
+    var isUpgrade: Bool { return clientRequestedUpgrade }
     
     /// An enum for internal state
     enum State {
@@ -121,6 +126,7 @@ public class IncomingHTTPSocketProcessor: IncomingSocketProcessor {
     private func parse(_ buffer: NSData) {
         let parsingStatus = request.parse(buffer)
         guard  parsingStatus.error == nil  else  {
+
             Log.error("Failed to parse a request. \(parsingStatus.error!)")
             if  let response = response {
                 response.statusCode = .badRequest
@@ -131,7 +137,6 @@ public class IncomingHTTPSocketProcessor: IncomingSocketProcessor {
             }
             return
         }
-        
         switch(parsingStatus.state) {
         case .initial:
             break
@@ -139,6 +144,11 @@ public class IncomingHTTPSocketProcessor: IncomingSocketProcessor {
             clientRequestedKeepAlive = parsingStatus.keepAlive
             parsingComplete()
         case .reset, .headersComplete:
+            break
+        case .upgrade:
+            clientRequestedKeepAlive = true
+            clientRequestedUpgrade = true
+            parsingComplete()
             break
         }
     }

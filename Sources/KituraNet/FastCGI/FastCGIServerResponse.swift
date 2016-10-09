@@ -285,4 +285,8 @@ public class FastCGIServerResponse : ServerResponse {
         self.socket = nil
     }
 
+    public func `switch`(to processor: IncomingSocketProcessor) {
+
+    }
+
 }

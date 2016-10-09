@@ -40,6 +40,8 @@ public protocol ServerResponse: class {
     ///
     /// - Throws: Socket.error if an error occurred while writing to the socket
     func write(from data: Data) throws
+
+    func `switch`(to processor: IncomingSocketProcessor)
     
     /// Add a string to the body of the HTTP response and complete sending the HTTP response
     ///
